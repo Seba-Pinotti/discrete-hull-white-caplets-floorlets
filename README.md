@@ -1,4 +1,4 @@
-# discrete-hull-white-caplet-floorlet
+# discrete-hull-white-caplets-floorlets
 
 Discrete-time Hull–White pricing of backward-looking caplets and floorlets — R code for the thesis and the accompanying working paper.
 
