@@ -67,8 +67,6 @@ The baseline parameter configuration is:
 | Accrual length | 90 days |
 | ATM forward rate | 3.5% |
 
-These parameters are used for the illustrative numerical analysis and are not presented as an empirical calibration.
-
 ## Reference
 
 Pinotti, S. (2026). *Backward-Looking Caplet Pricing in a Discrete Hull–White Model: Closed Forms, Variance Decomposition, and the Backward–Forward Price Gap.* Working paper, WU Vienna University of Economics and Business.
