@@ -1,32 +1,80 @@
-# discrete-hull-white-caplets-floorlets
+# Discrete Hull–White Caplet and Floorlet Pricing
 
-Discrete-time Hull–White pricing of backward-looking caplets and floorlets — R code for the thesis and the accompanying working paper.
+R implementation accompanying the working paper:
+
+**Backward-Looking Caplet Pricing in a Discrete Hull–White Model: Closed Forms, Variance Decomposition, and the Backward–Forward Price Gap**
+
+Sebastiano Pinotti  
+WU Vienna University of Economics and Business  
+October 2026
+
+[Working paper on SSRN](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7374959)
 
 ## Overview
 
-This repository contains the numerical implementation accompanying:
+This repository contains the numerical implementation and sensitivity analysis accompanying a working paper on backward- and forward-looking caplet and floorlet pricing in a fully discrete-time Hull–White framework.
 
-- My Bachelor's thesis, *Caplet and Floorlet Pricing under Backward-Looking Compounded Rates in a Discrete Hull–White Framework*, University of Padova, 2025/2026.
-- The working paper *Backward-Looking Caplet Pricing in a Discrete Hull–White Model: Closed Forms, Variance Decomposition, and the Backward–Forward Price Gap* (2026), which grew out of the thesis.
+The short rate follows a Gaussian first-order autoregression, with coefficients corresponding to the exact discretization of the continuous-time Hull–White short-rate process. Bond pricing, overnight compounding, and discounting are defined consistently within the discrete-time market.
 
-Both works study backward-looking caplets and floorlets in a discrete Hull–White model, where the short rate follows a first-order autoregressive recursion, obtained as the Euler–Maruyama discretization of the Hull–White equation. Under the single-period convention `p(k, k+1) = exp(-r_k)`, the compounded rate telescopes exactly into the exponential of the sum of short rates, and the caplet/floorlet prices follow in closed form from truncated Gaussian moments. The two conventions share a single Black-type formula and differ only through the variance decomposition `nu_X = nu_W + nu_{m,N}`, which governs the backward–forward price gap.
+The Gaussian structure allows closed-form pricing without stochastic calculus, using truncated Gaussian exponential moments.
 
-## Contents
+## Main Results
 
-- `thesis-caplet-floorlet-sensitivity-analysis.R` — self-contained script reproducing the numerical analysis of Chapter 4 of the thesis: base-case diagnostics (Table 4.1), the variance decomposition, the sensitivity of the price to volatility, mean reversion, strike, the pre-accrual and accrual windows, and the backward-versus-forward price gap (Sections 4.2 and 4.4).
-- `paper-caplet-sensitivity-analysis.R` — self-contained script reproducing all figures and numbers of Section 4 of the working paper. It saves the figures as PNG files to `figures/` and recomputes, with the paper's quoted values alongside, every number cited in the text.
+The paper establishes:
 
-The scripts are independent, each runs on its own.
+- **Closed-form pricing:** Analytical expressions for backward-looking caplets and floorlets at valuation dates before or within the accrual period, alongside their forward-looking counterparts.
+- **Variance decomposition:** An exact decomposition of the backward-looking variance into pre-accrual and in-accrual components, `ν_X = ν_W + ν_{m,N}`.
+- **Price dominance:** Backward-looking caplets are at least as valuable as otherwise equivalent forward-looking caplets before and at the start of accrual.
+- **Backward–forward price gap:** An exact integral representation, an at-the-money closed form, and an analytical characterization of the strike maximizing the gap.
+- **Sensitivity analysis:** Numerical investigation of the gap with respect to accrual length, mean reversion, volatility, and strike.
 
-## Requirements
+## Repository Contents
 
-- Base R only – no external packages.
+**`paper-caplet-sensitivity-analysis.R`**
 
-## Author
+Self-contained R script reproducing the figures and numerical results of Section 4 of the working paper.
 
-Sebastiano Pinotti  
-Bachelor's degree in Statistics for Economics and Business  
-University of Padova, Department of Statistical Sciences  
+The script includes:
 
-Supervisor: Prof. Massimiliano Caporin  
-Co-supervisor: Prof. Claudio Fontana
+- Closed-form computation of the pre-accrual, in-accrual, and total variances.
+- Backward- and forward-looking caplet pricing.
+- Exact and leading-order expressions for the at-the-money price gap.
+- Computation of the strike maximizing the backward–forward gap.
+- Sensitivity plots and numerical verification of the results reported in the paper.
+
+The generated figures are saved as PNG files in the `figures/` directory.
+
+## Requirements and Reproducibility
+
+- Base R only; no external packages required.
+- All numerical parameters are specified in the script.
+- Each figure and numerical check can be reproduced by running the script.
+
+From the repository directory, run:
+
+`Rscript paper-caplet-sensitivity-analysis.R`
+
+The script generates the figures and prints numerical checks to the console.
+
+The baseline parameter configuration is:
+
+| Parameter | Value |
+|---|---|
+| Time step | Δ = 1/360 |
+| Mean reversion | a = 0.75 |
+| Short-rate volatility | σ = 0.01 |
+| Pre-accrual length | 90 days |
+| Accrual length | 90 days |
+| ATM forward rate | 3.5% |
+
+These parameters are used for the illustrative numerical analysis and are not presented as an empirical calibration.
+
+## Reference
+
+Pinotti, S. (2026). *Backward-Looking Caplet Pricing in a Discrete Hull–White Model: Closed Forms, Variance Decomposition, and the Backward–Forward Price Gap.* Working paper, WU Vienna University of Economics and Business.
+
+[SSRN Preprint](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7374959)
+
+## License
+
+This repository is distributed under the MIT License. See [LICENSE](LICENSE) for details.
