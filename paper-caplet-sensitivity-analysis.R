@@ -7,8 +7,7 @@
 # ---------- Base case ----------
 Delta   <- 1/360          # ACT/360, one step = one calendar day
 a0      <- 0.75           # mean reversion
-sigHW0  <- 0.01           # annualized short-rate vol (100 bp)
-sig0    <- sigHW0 * Delta # per-period sigma = sigma_ann * Delta
+sig0    <- 0.01           # annualized short-rate vol (100 bp)
 m0      <- 90             # base pre-accrual length (3M)
 L0      <- 90             # base accrual length     (3M)
 Katm0   <- 0.035          # ATM strike K^ATM for normalized plots
@@ -26,32 +25,32 @@ save_png <- function(name, draw, width = 2000, height = 1000, res = 200) {
 # ---------- Variance components ----------
 
 S_ell <- function(ell, a, Delta) {
-  c <- 1 - a * Delta
+  c <- exp(-a * Delta)
   (1 - c^ell) / (1 - c)
 }
 
 nu_in <- function(L, a, sigma, Delta) {           #computationally efficient closed form of the summation
   if (L <= 1) return(0)
-  c <- 1 - a * Delta 
-  s <- ((L - 1) - 2*c*(1 - c^(L-1))/(1 - c) + c^2*(1 - c^(2*(L-1)))/(1 - c^2)) / (1 - c)^2 
-  sigma^2 * Delta * s 
+  c <- exp(-a * Delta)
+  s <- ((L - 1) - 2*c*(1 - c^(L-1))/(1 - c) + c^2*(1 - c^(2*(L-1)))/(1 - c^2)) / (1 - c)^2
+  Delta^2 * sigma^2 * (1 - c^2) / (2 * a) * s     
 }
 
-nu_pre <- function(m, L, a, sigma, Delta) {       
+nu_pre <- function(m, L, a, sigma, Delta) {
   if (m < 1) return(0)
-  c    <- 1 - a * Delta
+  c    <- exp(-a * Delta)
   SL   <- S_ell(L, a, Delta)
   geom <- (1 - c^(2 * m)) / (1 - c^2)
-  sigma^2 * Delta * SL^2 * geom
+  Delta^2 * sigma^2 * (1 - c^2) / (2 * a) * SL^2 * geom
 }
 
 nu_X <- function(m, L, a, sigma, Delta) {
   nu_pre(m, L, a, sigma, Delta) + nu_in(L, a, sigma, Delta)
 }
 
-nu_pre_inf <- function(m, a, sigma, Delta) {      
-  c <- 1 - a * Delta
-  sigma^2 * Delta * (1 - c^(2 * m)) / ((a * Delta)^2 * (1 - c^2))
+nu_pre_inf <- function(m, a, sigma, Delta) {
+  c <- exp(-a * Delta)
+  Delta^2 * sigma^2 * (1 - c^2) / (2 * a) * (1 - c^(2 * m)) / ((1 - c)^2 * (1 - c^2))
 }
 
 # ---------- Prices (normalized by p(0,m)) ----------
@@ -71,11 +70,11 @@ gap_norm <- function(nuW, nuX, K, Katm, alpha) {
   caplet_norm(nuX, K, Katm, alpha) - caplet_norm(nuW, K, Katm, alpha)
 }
 
-gap_atm_exact <- function(nuW, nuX) {            
+gap_atm_exact <- function(nuW, nuX) {
   2 * (pnorm(0.5 * sqrt(nuX)) - pnorm(0.5 * sqrt(nuW)))
 }
 
-gap_rel_exact <- function(nuW, nuX) {             
+gap_rel_exact <- function(nuW, nuX) {
   caplet_atm(nuX) / caplet_atm(nuW) - 1
 }
 
@@ -107,7 +106,7 @@ col_X <- "black"
 # Section 4: plots
 # =================
 
-draw_4a <- function() {   
+draw_4a <- function() {
   par(mfrow = c(1,2))
   mm <- 1:720
   vW <- sapply(mm, nu_pre, L=L0, a=a0, sigma=sig0, Delta=Delta) * 1e6
@@ -130,7 +129,7 @@ draw_4a <- function() {
   par(mfrow=c(1,1))
 }
 
-draw_4b <- function() {   
+draw_4b <- function() {
   par(mfrow = c(1,2))
   LL <- seq(5, 720, by = 1)
   vw <- sapply(LL, function(L) nu_pre(m0,L,a0,sig0,Delta))
@@ -150,7 +149,7 @@ draw_4b <- function() {
   par(mfrow = c(1,1))
 }
 
-draw_4c <- function() {   
+draw_4c <- function() {
   par(mfrow = c(1,2))
   aa <- seq(0.05, 3, length.out = 2000)
   vw <- sapply(aa, function(a) nu_pre(m0,L0,a,sig0,Delta))
@@ -169,7 +168,7 @@ draw_4c <- function() {
   par(mfrow = c(1,1))
 }
 
-draw_4d <- function() {   
+draw_4d <- function() {
   KK <- seq(Katm0 - 0.02, Katm0 + 0.02, length.out = 4000)
   ex <- sapply(KK, function(K) 1e4 * gap_norm(nW0, nX0, K, Katm0, alpha0))
   Kmx <- K_max(nW0, nX0, Katm0, alpha0)
@@ -196,17 +195,15 @@ save_png("fig_4d", draw_4d)
 
 
 cat("\n---- Section 4.1 text ----\n")
-cat(sprintf("a*Delta = %.1e   (paper: 2.1e-3)\n", a0*Delta))
-cat(sprintf("c = %.4f   (paper: 0.9979)\n", 1 - a0*Delta))
-cat(sprintf("sigma = %.2e   (paper: 2.78e-5)\n", sig0))
+cat(sprintf("c = %.5f   (paper: 0.99792)\n", exp(-a0*Delta)))
 
 cat("\n---- Table 1, base case ----\n")
-cat(sprintf("c^L = %.3f   (paper: 0.829)\n", (1-a0*Delta)^L0))
-cat(sprintf("S_L = %.1f   (paper: 82.1, vs L = 90)\n", S_ell(L0,a0,Delta)))
+cat(sprintf("c^L = %.3f   (paper: 0.829)\n", exp(-a0*Delta)^L0))
+cat(sprintf("S_L = %.1f   (paper: 82.2, vs L = 90)\n", S_ell(L0,a0,Delta)))
 cat(sprintf("nu_W = %.2e, sqrt = %.2e   (paper: 1.09e-6, 1.04e-3)\n", nW0, sqrt(nW0)))
-cat(sprintf("nu_{m,N} = %.2e, sqrt = %.2e   (paper: 4.47e-7, 6.69e-4)\n", nI0, sqrt(nI0)))
+cat(sprintf("nu_{m,N} = %.2e, sqrt = %.2e   (paper: 4.46e-7, 6.68e-4)\n", nI0, sqrt(nI0)))
 cat(sprintf("nu_X = %.2e, sqrt = %.2e   (paper: 1.53e-6, 1.24e-3)\n", nX0, sqrt(nX0)))
-cat(sprintf("variance shares: pre %.1f%%, in %.1f%%   (paper: 70.9%%, 29.1%%)\n",
+cat(sprintf("variance shares: pre %.1f%%, in %.1f%%   (paper: about 71%%)\n",
             100*nW0/nX0, 100*nI0/nX0))
 
 cat("\n---- Remark on the leading-order form ----\n")
@@ -217,13 +214,13 @@ cat("\n---- Remark on saturation ----\n")
 nWinf <- nu_pre_inf(m0, a0, sig0, Delta)
 cat(sprintf("nu_W^inf = %.3e, sqrt = %.3e\n", nWinf, sqrt(nWinf)))
 cat(sprintf("limiting ATM gap = %.4f * p(n,m)\n", 2*pnorm(-0.5*sqrt(nWinf))))
-cat(sprintf("nu_in(L=1e6) / [sigma^2 L/(a^2 Delta)] = %.4f   (should be approaching 1)\n",
-            nu_in(1e6,a0,sig0,Delta) / (sig0^2*1e6/(a0^2*Delta))))
-L1 <- a0^2*Delta/sig0^2
+cat(sprintf("nu_in(L=1e6) / [sigma^2 Delta L/a^2] = %.4f   (should be approaching 1)\n",
+            nu_in(1e6,a0,sig0,Delta) / (sig0^2*Delta*1e6/a0^2)))
+L1 <- a0^2/(sig0^2*Delta)
 cat(sprintf("L such that nu_X ~ 1: %.2e days   (paper: order 1e6)\n", L1))
 cat(sprintf("nu_X at that L = %.3f   (should be near 1)\n",
             nu_pre(m0,L1,a0,sig0,Delta) + nu_in(L1,a0,sig0,Delta)))
-scl <- 1e-2/sqrt(nX0)   
+scl <- 1e-2/sqrt(nX0)
 vw_s <- nu_pre(m0,L0,a0,sig0*scl,Delta)
 vx_s <- vw_s + nu_in(L0,a0,sig0*scl,Delta)
 cat(sprintf("LO rel. error at sqrt(nu_X) = 1e-2: %.2e   (paper: around 1e-5)\n",
@@ -235,14 +232,14 @@ cat(sprintf("fr caplet = %.2f bp, br caplet = %.2f bp   (paper: 4.16, 4.94)\n",
 cat(sprintf("ATM gap = %.2f bp   (paper: 0.78)\n", 1e4*gap_atm_exact(nW0,nX0)))
 cat(sprintf("relative gap = %.1f%%   (paper: 18.8)\n", 100*gap_rel_exact(nW0,nX0)))
 sHW <- seq(0.001, 0.025, length.out = 200)
-vw_v <- sapply(sHW, function(s) nu_pre(m0,L0,a0,s*Delta,Delta))
-vx_v <- vw_v + sapply(sHW, function(s) nu_in(L0,a0,s*Delta,Delta))
+vw_v <- sapply(sHW, function(s) nu_pre(m0,L0,a0,s,Delta))
+vx_v <- vw_v + sapply(sHW, function(s) nu_in(L0,a0,s,Delta))
 rel_v <- 100*gap_rel_exact(vw_v, vx_v)
-cat(sprintf("relative gap over sigma sweep: min %.3f%%, max %.3f%%   (paper: nearly flat at 18.8)\n",
+cat(sprintf("relative gap over sigma sweep: min %.3f%%, max %.3f%%   (paper: flat at 18.8)\n",
             min(rel_v), max(rel_v)))
 
 cat("\n---- Remark on the maximum near the money ----\n")
-cat(sprintf("0.5*sqrt(nu_X nu_W) = %.1e   (paper: 6.5e-7)\n", 0.5*sqrt(nX0*nW0)))
+cat(sprintf("0.5*sqrt(nu_X nu_W) = %.1e   (paper: 6.4e-7)\n", 0.5*sqrt(nX0*nW0)))
 Kmx0 <- K_max(nW0, nX0, Katm0, alpha0)
 cat(sprintf("K^max - K^ATM = %.3e bp   (paper: well under 0.1 bp)\n",
             1e4*(Kmx0 - Katm0)))
@@ -259,17 +256,18 @@ cat(sprintf("relative gap crosses 100%% at %.2f months   (paper: near eighteen)\
 
 
 cat("\n---- Mean-reversion paragraph ----\n")
-gap_a <- function(a) { 
+gap_a <- function(a) {
   w <- nu_pre(m0,L0,a,sig0,Delta)
-  1e4*gap_atm_exact(w, w + nu_in(L0,a,sig0,Delta)) 
-  }
-rel_a <- function(a) { 
+  1e4*gap_atm_exact(w, w + nu_in(L0,a,sig0,Delta))
+}
+rel_a <- function(a) {
   w <- nu_pre(m0,L0,a,sig0,Delta)
-  100*gap_rel_exact(w, w + nu_in(L0,a,sig0,Delta)) 
-  }
+  100*gap_rel_exact(w, w + nu_in(L0,a,sig0,Delta))
+}
 
 cat(sprintf("absolute gap: %.2f bp at a=0.05, %.2f bp at a=3   (paper: 0.76 to 0.82)\n",
             gap_a(0.05), gap_a(3)))
 cat(sprintf("relative gap: %.0f%% at a=0.05, %.0f%% at a=3   (paper: 15 to 32)\n",
             rel_a(0.05), rel_a(3)))
+
 
